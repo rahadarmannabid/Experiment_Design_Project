@@ -1,0 +1,2 @@
+000001,25-34,Female,PhD,No,2603:3021:325:8080:a099:321a:c75a:46c8,A,"Eagle,Cat,Dog,Deer,Dog,Dog,Deer,Cat,Eagle,Alligator,Alligator,NA,NA,NA,NA,NA,NA,NA",61.0
+000002,25-34,Male,PhD,No,2603:3021:325:8080:34e2:afae:f515:a473,B,"Eagle,Cat,Dog,Deer,Cat,Dog,Alligator,Alligator,Deer,Dog,Cat,Bear,Eagle,Dog,Deer,Cat,Dog,Dog",41.0

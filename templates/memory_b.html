@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Test - Version B</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #555;
+            margin-bottom: 30px;
+        }
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .options img {
+            width: 150px;
+            height: 150px;
+            border-radius: 8px;
+            cursor: pointer;
+            object-fit: cover;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .options img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        #stopwatch {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff5722;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        let questionIndex = 0;
+        const animalSequence = {{ animal_sequence | tojson }};
+        const allAnimals = [...new Set(animalSequence)]; // Unique animal names for options
+        const totalTime = 60000; // 1 minute in milliseconds
+        const userId = "{{ user_id }}"; // User ID dynamically passed from the backend
+        const responses = []; // Array to store all responses
+        let startTime; // Start time of the study
+
+        function startTimer() {
+            const stopwatchElement = document.getElementById('stopwatch');
+            let remainingTime = totalTime / 1000; // Initialize timer to 1 minute
+
+            const interval = setInterval(() => {
+                if (remainingTime > 0) {
+                    stopwatchElement.innerText = `Time left: ${remainingTime--} seconds`;
+                } else {
+                    clearInterval(interval); // Stop the timer
+                    submitResponses(); // Submit responses when the time ends
+                }
+            }, 1000);
+        }
+
+        function displayQuestion() {
+            if (questionIndex < animalSequence.length) {
+                const currentAnimal = animalSequence[questionIndex];
+                const questionElement = document.getElementById('question');
+                const optionsContainer = document.getElementById('options');
+
+                // Update the question text
+                questionElement.innerText = `What was the ${questionIndex + 1} animal?`;
+
+                // Clear previous options
+                optionsContainer.innerHTML = '';
+
+                // Shuffle options
+                const shuffledOptions = shuffleOptions([currentAnimal, ...getRandomOptions(allAnimals, currentAnimal, 5)]);
+
+                // Create clickable images for each option
+                shuffledOptions.forEach(option => {
+                    const img = document.createElement('img');
+                    img.src = `/sequence/${option}.jpg`; // Assume images are named after animal names
+                    img.alt = option;
+                    img.onclick = () => handleAnswer(option); // Handle answer
+                    optionsContainer.appendChild(img);
+                });
+            } else {
+                submitResponses(); // Submit responses when all questions are answered
+            }
+        }
+
+        function shuffleOptions(options) {
+            return options.sort(() => Math.random() - 0.5);
+        }
+
+        function getRandomOptions(allOptions, exclude, count) {
+            return allOptions.filter(opt => opt !== exclude).sort(() => Math.random() - 0.5).slice(0, count);
+        }
+
+        function handleAnswer(selected) {
+            // Store the selected answer
+            responses.push(selected);
+            questionIndex++;
+
+            // Move to the next question
+            if (questionIndex < animalSequence.length) {
+                displayQuestion();
+            } else {
+                submitResponses(); // Submit responses when all questions are answered
+            }
+        }
+
+        function submitResponses() {
+            const endTime = new Date(); // Record end time
+            const totalTimeSpent = Math.floor((endTime - startTime) / 1000); // Calculate time spent in seconds
+
+            // Fill NA for unanswered questions
+            while (responses.length < animalSequence.length) {
+                responses.push("NA");
+            }
+
+            // Send all responses and total time to the backend via POST
+            fetch(`/save-memory-answers/${userId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ responses, total_time: totalTimeSpent })
+            }).then(response => {
+                if (response.ok) {
+                    // Redirect to the thank-you page
+                    window.location.href = "/thanks";
+                } else {
+                    alert("Error submitting responses. Please try again.");
+                }
+            });
+        }
+
+        window.onload = function () {
+            startTime = new Date(); // Record start time
+            displayQuestion(); // Start displaying questions
+            startTimer(); // Start the 1-minute timer
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Memory Test - Version B</h1>
+        <p id="question"></p>
+        <div class="options" id="options"></div>
+        <div id="stopwatch">Time left: 60 seconds</div>
+    </div>
+</body>
+</html>

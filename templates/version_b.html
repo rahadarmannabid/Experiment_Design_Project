@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey - Version B</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #555;
+            margin-bottom: 30px;
+        }
+        #animal-image {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #stopwatch {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f78b4;
+            margin-bottom: 30px;
+        }
+        button {
+            background-color: #dd1c77;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #a31559;
+        }
+    </style>
+    <style>
+        #animal-image {
+            width: 300px; /* Fixed width */
+            height: 300px; /* Fixed height */
+            object-fit: cover; /* Ensures the image scales and fills the area while maintaining aspect ratio */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        let animalIndex = 0;
+        const animalSequence = {{ animal_sequence | tojson }};
+        const displayDuration = 5000; // 5 seconds to memorize
+        let timer = displayDuration / 1000; // Initialize stopwatch with seconds
+        const userId = "{{ user_id }}"; // Dynamic user ID from the backend
+
+        function updateStopwatch() {
+            const stopwatchElement = document.getElementById('stopwatch');
+            stopwatchElement.innerText = `Time left: ${timer} seconds`;
+            timer--;
+
+            if (timer >= 0) {
+                setTimeout(updateStopwatch, 1000);
+            }
+        }
+
+        function displayAnimalImage() {
+            if (animalIndex < animalSequence.length) {
+                const animalName = animalSequence[animalIndex];
+                const imagePath = `/sequence/${animalName}.jpg`; // Relative path for the images
+                const animalImageElement = document.getElementById('animal-image');
+
+                // Update the image source
+                animalImageElement.src = imagePath;
+                animalImageElement.alt = `Image of ${animalName}`;
+                
+                timer = displayDuration / 1000; // Reset stopwatch for next image
+                updateStopwatch(); // Start the stopwatch
+
+                animalIndex++;
+                setTimeout(displayAnimalImage, displayDuration); // Move to next animal after 5 seconds
+            } else {
+                // Redirect to the memory-b page after all images are displayed
+                window.location.href = `/memory-b/${userId}`;
+            }
+        }
+
+        window.onload = function () {
+            displayAnimalImage();
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Survey Version B</h1>
+        <p>Welcome, Participant <span style="font-weight: bold; color: #dd1c77;">{{ user_id }}</span>. This is Version B of the survey.</p>
+        <img id="animal-image" src="" alt="Animal image will appear here" />
+        <div id="stopwatch">Time left: 5 seconds</div>
+    </div>
+</body>
+</html>

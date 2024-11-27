@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey - Version A</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #1f78b4;
+        }
+        .welcome-text {
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #dd1c77;
+        }
+        #animal-display {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f9ff;
+            border: 1px solid #dceaf7;
+            border-radius: 8px;
+            color: #1f78b4;
+        }
+        #stopwatch {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff5722;
+            padding: 10px;
+            border: 1px dashed #ffab91;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        button {
+            background-color: #1f78b4;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #155d86;
+        }
+    </style>
+    <script>
+        let animalIndex = 0;
+        const animalSequence = {{ animal_sequence | tojson }};
+        const displayDuration = 5000; // 5 seconds per animal
+        const userId = "{{ user_id }}"; // Dynamic user ID from server
+
+        function startTimer(duration, callback) {
+            let timer = duration;
+            const stopwatchElement = document.getElementById('stopwatch');
+
+            const interval = setInterval(() => {
+                stopwatchElement.innerText = `Time left: ${timer} seconds`;
+                timer--;
+
+                if (timer < 0) {
+                    clearInterval(interval);
+                    callback();
+                }
+            }, 1000);
+        }
+
+        function displayAnimal() {
+            if (animalIndex < animalSequence.length) {
+                // Display the current animal
+                document.getElementById('animal-display').innerText = animalSequence[animalIndex];
+                animalIndex++;
+
+                // Start the timer for this animal
+                startTimer(5, displayAnimal); // Call displayAnimal again after 5 seconds
+            } else {
+                // Redirect to the memory page after all animals are displayed
+                window.location.href = `/memory-a/${userId}`;
+            }
+        }
+
+        window.onload = function () {
+            displayAnimal();
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Survey Version A</h1>
+        <p class="welcome-text">Welcome, Participant <span class="highlight">{{ user_id }}</span>. This is Version A of the survey.</p>
+        <div id="animal-display"></div>
+        <div id="stopwatch">Time left: 5 seconds</div>
+    </div>
+</body>
+</html>
