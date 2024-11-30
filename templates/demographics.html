@@ -25,6 +25,12 @@
             margin-bottom: 20px;
             font-size: 24px;
         }
+        .introduction {
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #555;
+            text-align: justify;
+        }
         .form-group {
             margin-bottom: 20px;
         }
@@ -34,7 +40,7 @@
             font-weight: bold;
             color: #333;
         }
-        select, button {
+        input, select, button {
             width: 100%;
             padding: 10px;
             margin-top: 5px;
@@ -51,17 +57,34 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
             font-size: 16px;
-            width: 100%;
         }
         button:hover {
             background-color: #155d86;
         }
+
+        .highlight-p {
+            background-color: #1f78b4; /* Blue */
+            color: white;
+        }
+
+
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Demographics Information</h1>
-        <form action="/submit-demographics" method="post">
+        <div class="introduction">
+            Welcome Participants! This study is about to evaluate effectiveness of different mode of information presentation (visual vs textual) on the understanding the that effect on human cognition. <span class="highlight-p">  In this study, we will provide information about 10 animals, you have to remember the sequence of the animals shown in your memory. </span> After that, you will be asked to recall the sequence of the animals.<span class="highlight-p"> Please don't use pen and paper to write down the sequence of the animals. 
+        </span>
+            <br>
+            <br>
+        
+            <form action="/submit-demographics" method="post">
+            <div class="form-group">
+                <label for="prolific_id">Prolific ID:</label>
+                <input type="text" id="prolific_id" name="prolific_id" placeholder="Enter your Prolific ID" required>
+            </div>
             <div class="form-group">
                 <label for="age_range">Age Range:</label>
                 <select id="age_range" name="age_range" required>
@@ -96,7 +119,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="visualization_problems">Do you have any visualization problems?</label>
+                <label for="visualization_problems">Do you have any visualization imperiments (Color Blindness, blindness) ?</label>
                 <select id="visualization_problems" name="visualization_problems" required>
                     <option value="" disabled selected>Select an option</option>
                     <option value="Yes">Yes</option>

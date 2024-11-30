@@ -32,12 +32,19 @@
             color: #555;
             margin-bottom: 30px;
         }
+        #animal-message {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
         #animal-image {
-            max-width: 100%;
-            height: auto;
-            margin-bottom: 20px;
+            width: 300px; /* Fixed width */
+            height: 300px; /* Fixed height */
+            object-fit: cover; /* Ensures the image scales and fills the area while maintaining aspect ratio */
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
         #stopwatch {
             font-size: 20px;
@@ -60,16 +67,6 @@
             background-color: #a31559;
         }
     </style>
-    <style>
-        #animal-image {
-            width: 300px; /* Fixed width */
-            height: 300px; /* Fixed height */
-            object-fit: cover; /* Ensures the image scales and fills the area while maintaining aspect ratio */
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-    </style>
     <script>
         let animalIndex = 0;
         const animalSequence = {{ animal_sequence | tojson }};
@@ -87,11 +84,22 @@
             }
         }
 
+        function getOrdinalSuffix(number) {
+            const suffixes = ["th", "st", "nd", "rd"];
+            const remainder = number % 100;
+            return suffixes[(remainder - 20) % 10] || suffixes[remainder] || suffixes[0];
+        }
+
         function displayAnimalImage() {
             if (animalIndex < animalSequence.length) {
                 const animalName = animalSequence[animalIndex];
                 const imagePath = `/sequence/${animalName}.jpg`; // Relative path for the images
                 const animalImageElement = document.getElementById('animal-image');
+                const animalMessageElement = document.getElementById('animal-message');
+
+                // Update the ordinal message for the current animal
+                const ordinalSuffix = getOrdinalSuffix(animalIndex + 1);
+                animalMessageElement.innerText = `This is the ${animalIndex + 1}${ordinalSuffix} animal (remember the sequence)`;
 
                 // Update the image source
                 animalImageElement.src = imagePath;
@@ -117,6 +125,7 @@
     <div class="container">
         <h1>Survey Version B</h1>
         <p>Welcome, Participant <span style="font-weight: bold; color: #dd1c77;">{{ user_id }}</span>. This is Version B of the survey.</p>
+        <p id="animal-message"></p>
         <img id="animal-image" src="" alt="Animal image will appear here" />
         <div id="stopwatch">Time left: 5 seconds</div>
     </div>

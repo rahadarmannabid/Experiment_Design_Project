@@ -6,8 +6,17 @@ from pydantic import BaseModel
 import csv
 import time
 import os
+import random
+import string
 
 app = FastAPI()
+
+@app.middleware("http")
+async def add_ngrok_skip_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["ngrok-skip-browser-warning"] = "true"
+    return response
+
 
 # Mount static files (images for animals)
 app.mount("/sequence", StaticFiles(directory="sequence"), name="sequence")
@@ -35,6 +44,13 @@ class MemoryResponses(BaseModel):
     total_time: float  # Total time spent answering in seconds
 
 
+def generate_unique_user_id():
+    """Generate a unique user ID with a random 5-digit number and random string."""
+    random_number = random.randint(10000, 99999)
+    random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    return f"{random_number}{random_string}"
+
+
 @app.get("/", response_class=HTMLResponse)
 async def demographics_form(request: Request):
     return templates.TemplateResponse("demographics.html", {"request": request})
@@ -43,6 +59,7 @@ async def demographics_form(request: Request):
 @app.post("/submit-demographics")
 async def submit_demographics(
     request: Request,
+    prolific_id: str = Form(...),
     age_range: str = Form(...),
     gender: str = Form(...),
     education: str = Form(...),
@@ -52,8 +69,9 @@ async def submit_demographics(
     client_ip = request.client.host
 
     # Generate a unique user ID
-    user_id = str(len(user_data) + 1).zfill(6)  # Ensure a 6-digit unique ID
+    user_id = generate_unique_user_id()
     user_data[user_id] = {
+        "prolific_id": prolific_id,  # Include Prolific ID
         "age_range": age_range,
         "gender": gender,
         "education": education,
@@ -79,14 +97,14 @@ async def submit_demographics(
             writer = csv.writer(file)
             writer.writerow([
                 "user_id", "age_range", "gender", "education", "visualization_problems",
-                "ip_address", "version", "responses", "total_time"
+                "ip_address", "version", "responses", "total_time", "prolific_id",
             ])
 
     # Append demographic data
     with open("user_data.txt", "a", newline="") as file:
         writer = csv.writer(file)
         writer.writerow([
-            user_id, age_range, gender, education, visualization_problems, client_ip, version, "", ""
+            user_id, age_range, gender, education, visualization_problems, client_ip, version, prolific_id, "", ""
         ])
 
     # Redirect based on the assigned version
@@ -99,11 +117,8 @@ async def submit_demographics(
 @app.get("/version-a/{user_id}", response_class=HTMLResponse)
 async def version_a(request: Request, user_id: str):
     # Animal sequence
-    animal_sequence = [
-        "Eagle", "Cat", "Dog", "Alligator", "Deer", "Bear",
-        "Cat", "Eagle", "Dog", "Deer", "Alligator", "Bear",
-        "Dog", "Cat", "Eagle", "Bear", "Alligator", "Deer"
-    ]
+    animal_sequence = ['Eagle', 'Cat', 'Fox', 'Puffin', 'Dog', 'Bear', 'Goldfinch', 'Deer', 'Alligator', 'Squirrel']
+
     return templates.TemplateResponse(
         "version_a.html",
         {"request": request, "user_id": user_id, "animal_sequence": animal_sequence}
@@ -113,26 +128,19 @@ async def version_a(request: Request, user_id: str):
 @app.get("/version-b/{user_id}", response_class=HTMLResponse)
 async def version_b(request: Request, user_id: str):
     # Animal sequence
-    animal_sequence = [
-        "Eagle", "Cat", "Dog", "Alligator", "Deer", "Bear",
-        "Cat", "Eagle", "Dog", "Deer", "Alligator", "Bear",
-        "Dog", "Cat", "Eagle", "Bear", "Alligator", "Deer"
-    ]
+    animal_sequence = ['Eagle', 'Cat', 'Fox', 'Puffin', 'Dog', 'Bear', 'Goldfinch', 'Deer', 'Alligator', 'Squirrel']
+
     return templates.TemplateResponse(
         "version_b.html",
         {"request": request, "user_id": user_id, "animal_sequence": animal_sequence}
     )
 
 
-
 @app.get("/memory-a/{user_id}", response_class=HTMLResponse)
 async def memory_a(request: Request, user_id: str):
     # Animal sequence
-    animal_sequence = [
-        "Eagle", "Cat", "Dog", "Alligator", "Deer", "Bear",
-        "Cat", "Eagle", "Dog", "Deer", "Alligator", "Bear",
-        "Dog", "Cat", "Eagle", "Bear", "Alligator", "Deer"
-    ]
+    animal_sequence = ['Eagle', 'Cat', 'Fox', 'Puffin', 'Dog', 'Bear', 'Goldfinch', 'Deer', 'Alligator', 'Squirrel']
+
     return templates.TemplateResponse(
         "memory_a.html",
         {"request": request, "user_id": user_id, "animal_sequence": animal_sequence}
@@ -142,16 +150,12 @@ async def memory_a(request: Request, user_id: str):
 @app.get("/memory-b/{user_id}", response_class=HTMLResponse)
 async def memory_b(request: Request, user_id: str):
     # Animal sequence
-    animal_sequence = [
-        "Eagle", "Cat", "Dog", "Alligator", "Deer", "Bear",
-        "Cat", "Eagle", "Dog", "Deer", "Alligator", "Bear",
-        "Dog", "Cat", "Eagle", "Bear", "Alligator", "Deer"
-    ]
+    animal_sequence = ['Eagle', 'Cat', 'Fox', 'Puffin', 'Dog', 'Bear', 'Goldfinch', 'Deer', 'Alligator', 'Squirrel']
+
     return templates.TemplateResponse(
         "memory_b.html",
         {"request": request, "user_id": user_id, "animal_sequence": animal_sequence}
     )
-
 
 @app.post("/save-memory-answers/{user_id}")
 async def save_memory_answers(user_id: str, memory_data: MemoryResponses):
@@ -161,24 +165,36 @@ async def save_memory_answers(user_id: str, memory_data: MemoryResponses):
 
     # Read the current file contents
     rows = []
+    header = []
     with open("user_data.txt", "r", newline="") as file:
         reader = csv.reader(file)
+        header = next(reader)  # Preserve header
         rows = list(reader)
 
     # Find the row corresponding to the user_id and update it
     for i, row in enumerate(rows):
-        if row[0] == user_id:
-            rows[i][7] = ",".join(memory_data.responses)  # Update responses
-            rows[i][8] = str(memory_data.total_time)  # Update total time
+        if row[0] == user_id:  # Match by user_id
+            # Update responses and total_time while retaining all other data
+            row[7] = ",".join(memory_data.responses)  # Update responses
+            row[8] = str(memory_data.total_time)  # Update total_time
+            rows[i] = row  # Save back the updated row
             break
 
-    # Write the updated file contents back
+    # Write the updated file contents back, including the header
     with open("user_data.txt", "w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerows(rows)
+        writer.writerow(header)  # Write the header first
+        writer.writerows(rows)  # Write updated rows
+
+    # Update the in-memory user data dictionary
+    if user_id in user_data:
+        user_data[user_id]["responses"] = memory_data.responses
+        user_data[user_id]["total_time"] = memory_data.total_time
 
     # Redirect to the thank-you page after saving responses
     return RedirectResponse(url="/thanks", status_code=302)
+
+
 
 
 @app.get("/thanks", response_class=HTMLResponse)

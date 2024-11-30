@@ -62,21 +62,33 @@
         let questionIndex = 0;
         const animalSequence = {{ animal_sequence | tojson }};
         const allAnimals = [...new Set(animalSequence)]; // Unique animal names for options
-        const totalTime = 60000; // 1 minute in milliseconds
+        const totalTime = animalSequence.length * 10 * 1000; // 10 seconds per question
         const userId = "{{ user_id }}"; // User ID dynamically passed from the backend
         const responses = []; // Array to store all responses
         let startTime; // Start time of the study
 
+        function preventBackButton() {
+            // Disable the browser's back button
+            history.pushState(null, null, location.href);
+            window.onpopstate = function () {
+                history.pushState(null, null, location.href);
+                alert("Back navigation is disabled for this test.");
+            };
+        }
+
         function startTimer() {
             const stopwatchElement = document.getElementById('stopwatch');
-            let remainingTime = totalTime / 1000; // Initialize timer to 1 minute
+            let remainingTime = totalTime / 1000; // Initialize timer based on sequence length
 
             const interval = setInterval(() => {
-                if (remainingTime > 0) {
+                if (questionIndex >= animalSequence.length) {
+                    clearInterval(interval); // Stop timer if all questions are answered
+                    submitResponses();
+                } else if (remainingTime > 0) {
                     stopwatchElement.innerText = `Time left: ${remainingTime--} seconds`;
                 } else {
-                    clearInterval(interval); // Stop the timer
-                    submitResponses(); // Submit responses when the time ends
+                    clearInterval(interval); // End timer
+                    submitResponses(); // Submit answers after timer ends
                 }
             }, 1000);
         }
@@ -93,8 +105,8 @@
                 // Clear previous options
                 optionsContainer.innerHTML = '';
 
-                // Shuffle options
-                const shuffledOptions = shuffleOptions([currentAnimal, ...getRandomOptions(allAnimals, currentAnimal, 5)]);
+                // Show all 10 animals as options
+                const shuffledOptions = shuffleOptions(allAnimals);
 
                 // Create clickable images for each option
                 shuffledOptions.forEach(option => {
@@ -110,11 +122,7 @@
         }
 
         function shuffleOptions(options) {
-            return options.sort(() => Math.random() - 0.5);
-        }
-
-        function getRandomOptions(allOptions, exclude, count) {
-            return allOptions.filter(opt => opt !== exclude).sort(() => Math.random() - 0.5).slice(0, count);
+            return options.sort(() => Math.random() - 0.5); // Shuffle the options
         }
 
         function handleAnswer(selected) {
@@ -157,9 +165,10 @@
         }
 
         window.onload = function () {
+            preventBackButton(); // Prevent back button navigation
             startTime = new Date(); // Record start time
             displayQuestion(); // Start displaying questions
-            startTimer(); // Start the 1-minute timer
+            startTimer(); // Start the timer
         };
     </script>
 </head>
@@ -168,7 +177,7 @@
         <h1>Memory Test - Version B</h1>
         <p id="question"></p>
         <div class="options" id="options"></div>
-        <div id="stopwatch">Time left: 60 seconds</div>
+        <div id="stopwatch">Time left: 100 seconds</div>
     </div>
 </body>
 </html>

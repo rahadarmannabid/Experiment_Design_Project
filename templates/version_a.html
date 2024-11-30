@@ -49,6 +49,12 @@
             border-radius: 8px;
             color: #1f78b4;
         }
+        #animal-count {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
         #stopwatch {
             font-size: 18px;
             font-weight: bold;
@@ -96,8 +102,15 @@
 
         function displayAnimal() {
             if (animalIndex < animalSequence.length) {
+                // Display the animal index as a message
+                const animalCountElement = document.getElementById('animal-count');
+                const ordinalSuffix = getOrdinalSuffix(animalIndex + 1);
+                animalCountElement.innerText = `This is the ${animalIndex + 1}${ordinalSuffix} animal (remember the sequence)`;
+
                 // Display the current animal
-                document.getElementById('animal-display').innerText = animalSequence[animalIndex];
+                const animalDisplayElement = document.getElementById('animal-display');
+                animalDisplayElement.innerText = animalSequence[animalIndex];
+
                 animalIndex++;
 
                 // Start the timer for this animal
@@ -106,6 +119,12 @@
                 // Redirect to the memory page after all animals are displayed
                 window.location.href = `/memory-a/${userId}`;
             }
+        }
+
+        function getOrdinalSuffix(number) {
+            const suffixes = ["th", "st", "nd", "rd"];
+            const remainder = number % 100;
+            return suffixes[(remainder - 20) % 10] || suffixes[remainder] || suffixes[0];
         }
 
         window.onload = function () {
@@ -117,6 +136,7 @@
     <div class="container">
         <h1>Survey Version A</h1>
         <p class="welcome-text">Welcome, Participant <span class="highlight">{{ user_id }}</span>. This is Version A of the survey.</p>
+        <div id="animal-count"></div>
         <div id="animal-display"></div>
         <div id="stopwatch">Time left: 5 seconds</div>
     </div>
